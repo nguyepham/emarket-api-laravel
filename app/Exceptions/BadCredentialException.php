@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Exceptions;
+
+use Exception;
+
+class BadCredentialException extends Exception
+{
+    public function __construct()
+    {
+        parent::__construct('Invalid email or password.');
+    }
+}

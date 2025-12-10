@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Models\Auth;
+
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
+class User extends Authenticatable implements JWTSubject
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable, HasUuids;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'first_name', // Replaces 'name'
+        'last_name',  // Replaces 'name'
+        'email',
+        'phone',      // New field
+        'roles',      // New JSON field
+        'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'roles' => 'array', // Cast the JSON column to a PHP array automatically
+        ];
+    }
+
+    /**
+     * ACCESSOR: emailVerified
+     *
+     * The OAS schema requires a boolean 'emailVerified', but Laravel
+     * stores a timestamp 'email_verified_at'.
+     *
+     * This accessor bridges the gap. When accessing $user->email_verified,
+     * it returns true/false.
+     */
+    protected function emailVerified(): Attribute
+    {
+        return Attribute::make(
+            get: fn (mixed $value, array $attributes) =>
+            ! is_null($attributes['email_verified_at'] ?? null),
+        );
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims(): array
+    {
+        return [];
+    }
+}
