@@ -45,15 +45,11 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         });
         $exceptions->render(function (Throwable $e) {
-            // Log the error so you (the dev) can see it (Laravel does this by default, but good to be explicit mentally)
-
-            // Return a safe, generic JSON response to the user
-            // NEVER return $e->getMessage() in production!
-            $message = app()->isLocal() ? $e->getMessage() : 'Server Error. Please try again later.';
+            $message = app()->environment(['local', 'testing']) ? $e->getMessage() : 'Server Error. Please try again later.';
 
             return new ErrorResponse(500, [new ErrorItem(
                 message: $message,
-                exception: $e->getPrevious(),
+                exception: get_class($e),
                 file: $e->getFile(),
                 line: $e->getLine(),
                 trace: $e->getTrace()

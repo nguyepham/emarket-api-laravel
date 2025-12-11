@@ -2,7 +2,6 @@
 
 namespace App\Models\Auth;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,7 +10,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<\Database\Factories\Auth\UserFactory> */
     use HasFactory, Notifiable, HasUuids;
 
     /**
@@ -49,23 +48,6 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'roles' => 'array', // Cast the JSON column to a PHP array automatically
         ];
-    }
-
-    /**
-     * ACCESSOR: emailVerified
-     *
-     * The OAS schema requires a boolean 'emailVerified', but Laravel
-     * stores a timestamp 'email_verified_at'.
-     *
-     * This accessor bridges the gap. When accessing $user->email_verified,
-     * it returns true/false.
-     */
-    protected function emailVerified(): Attribute
-    {
-        return Attribute::make(
-            get: fn (mixed $value, array $attributes) =>
-            ! is_null($attributes['email_verified_at'] ?? null),
-        );
     }
 
     public function getJWTIdentifier()

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->timestamp('password_updated_at')->default(now());
 
             // 3. Optional Fields
             $table->string('phone')->nullable();
@@ -35,6 +36,18 @@ return new class extends Migration
             // 5. Standard Laravel Fields
             $table->timestamps();
         });
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+        Schema::create('refresh_tokens', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
+            // The actual opaque token (random string)
+            $table->string('token', 60)->unique();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -43,5 +56,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('refresh_tokens');
     }
 };

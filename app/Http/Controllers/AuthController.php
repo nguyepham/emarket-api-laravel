@@ -8,11 +8,11 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RefreshTokenRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Responses\AuthenticatedResponse;
-use App\Http\Responses\RefreshTokenResponse;
 use App\Models\Auth\RefreshToken;
 use App\Models\Auth\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class AuthController
@@ -23,12 +23,22 @@ class AuthController
         $refreshTokenText = Str::random(60);
         RefreshToken::create([
             'user_id' => $user->id,
-            'text' => $refreshTokenText
+            'token' => $refreshTokenText
         ]);
         return new AuthenticatedResponse(
             accessToken: $accessToken,
             refreshToken: $refreshTokenText
         );
+    }
+
+    public function register(RegisterRequest $request): AuthenticatedResponse
+    {
+        return DB::transaction(function () use ($request) {
+            $registerData = RegisterData::fromRequest($request);
+            $user = User::create($registerData->toArray());
+            $token = auth()->login($user);
+            return $this->issueTokens($user, $token);
+        });
     }
     /**
      * @throws BadCredentialException
@@ -43,23 +53,12 @@ class AuthController
         return $this->issueTokens(auth()->user(), $token);
     }
 
-    public function register(RegisterRequest $request): AuthenticatedResponse
-    {
-        return DB::transaction(function () use ($request) {
-
-            $registerData = RegisterData::fromRequest($request);
-            $user = User::create($registerData->toArray());
-            $token = auth()->login($user);
-            return $this->issueTokens($user, $token);
-        });
-    }
-
     /**
      * @throws AuthenticationException
      */
     public function refresh(RefreshTokenRequest $request): AuthenticatedResponse
     {
-        $storedToken = RefreshToken::where('text', $request->only('refreshToken'))->first();
+        $storedToken = RefreshToken::where('token', $request->only('refreshToken'))->first();
         if (! $storedToken) {
             throw new AuthenticationException();
         }
@@ -68,25 +67,18 @@ class AuthController
             $storedToken->delete(); //
             throw new AuthenticationException();
         }
-
-        $user = User::findOrFail($storedToken->user_id);
         // Constantly rotate the refresh token.
         // This keeps active users constantly logged in and forces inactive users to re-log in.
         $storedToken->delete();
-        return $this->issueTokens($user);
+        return $this->issueTokens(auth()->user());
     }
 
     public function logout(RefreshTokenRequest $request)
     {
         // Invalidate the JWT (Access Token) via Blacklist
-        // This prevents the short-lived token from being used again until it naturally expires.
-        try {
-            auth()->logout();
-        } catch (\Exception $e) {
-            // Token might already be expired/invalid, we continue to ensure Refresh Token is killed.
-        }
+        auth()->logout();
         // Revoke the specific Refresh Token.
-        RefreshToken::where('text', $request->only('refreshToken'))->delete();
+        RefreshToken::where('token', $request->only('refreshToken'))->delete();
         return response()->noContent();
     }
 }

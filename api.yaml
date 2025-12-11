@@ -38,7 +38,7 @@ security:
 
 # ======================================================================
 paths:
-  /health:
+  /secure-health:
     get:
       tags: [Health]
       summary: Liveness probe
@@ -112,7 +112,6 @@ paths:
       tags: [Auth]
       summary: Rotate tokens using refresh token
       operationId: refresh
-      security: []
       requestBody:
         required: true
         content:
@@ -140,6 +139,21 @@ paths:
         '200':
           description: Logged out
         '401': { $ref: '#/components/responses/Error401' }
+
+  /me/password:
+    put:
+      tags: [Auth]
+      summary: Change password
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordChangeRequest' }
+      responses:
+        '204':
+          description: Password changed
+        '400': { $ref: '#/components/responses/Error400' }
 
 # ======================================================================
 components:
@@ -203,7 +217,13 @@ components:
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
-        emailVerified: { type: boolean }
+        emailVerifiedAt: { type: string, format: date-time }
+        password:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$'
+          description: Must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special char.
+        passwordUpdatedAt: { type: string, format: date-time }
         firstName: { type: string }
         lastName: { type: string }
         phone: { type: string }
@@ -242,12 +262,16 @@ components:
       properties:
         refreshToken: { type: string }
 
-    Password:
+    PasswordChangeRequest:
       type: object
-      required: [text]
+      required: [currentPassword, newPassword]
       properties:
-        text: { type: string }
-        updatedAt: { type: string, format: date-time }
+        currentPassword: { type: string }
+        newPassword:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$'
+          description: Must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special char.
 
     AuthenticatedResponse:
       type: object
