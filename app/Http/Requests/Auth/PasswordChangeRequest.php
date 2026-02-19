@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Auth;
 
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 class PasswordChangeRequest extends FormRequest
 {
@@ -18,13 +18,25 @@ class PasswordChangeRequest extends FormRequest
         return [
             'currentPassword' => ['required', 'string'],
 
+            // At least 4 of 5 conditions must be met (mirrors frontend logic).
             'newPassword' => [
                 'required',
                 'string',
-                Password::min(8)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols(),
+                function (string $attribute, mixed $value, Closure $fail) {
+                    $conditions = [
+                        'length'    => mb_strlen($value) >= 8,
+                        'lowercase' => (bool) preg_match('/[a-z]/', $value),
+                        'uppercase' => (bool) preg_match('/[A-Z]/', $value),
+                        'number'    => (bool) preg_match('/\d/', $value),
+                        'special'   => (bool) preg_match('/[\W_]/', $value),
+                    ];
+
+                    $metCount = count(array_filter($conditions));
+
+                    if ($metCount < 4) {
+                        $fail('The password must meet at least 4 of the following: 8+ characters, lowercase letter, uppercase letter, number, special character.');
+                    }
+                },
             ],
         ];
     }

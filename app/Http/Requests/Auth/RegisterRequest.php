@@ -3,9 +3,9 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\Auth\User;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
@@ -26,16 +26,26 @@ class RegisterRequest extends FormRequest
                 Rule::unique(User::class, 'email')
             ],
 
-            // 2. Enforce Complexity
-            // Use the Password rule object instead of a raw Regex.
-            // It maps perfectly to the OAS requirements and is more readable.
+            // 2. Enforce Complexity — at least 4 of 5 conditions must be met.
+            // This mirrors the frontend PasswordStrengthIndicator logic exactly.
             'password' => [
                 'required',
                 'string',
-                Password::min(8)
-                    ->mixedCase() // Requires at least 1 uppercase and 1 lowercase
-                    ->numbers()   // Requires at least 1 number
-                    ->symbols()   // Requires at least 1 special character
+                function (string $attribute, mixed $value, Closure $fail) {
+                    $conditions = [
+                        'length'    => mb_strlen($value) >= 8,
+                        'lowercase' => (bool) preg_match('/[a-z]/', $value),
+                        'uppercase' => (bool) preg_match('/[A-Z]/', $value),
+                        'number'    => (bool) preg_match('/\d/', $value),
+                        'special'   => (bool) preg_match('/[\W_]/', $value),
+                    ];
+
+                    $metCount = count(array_filter($conditions));
+
+                    if ($metCount < 4) {
+                        $fail('Vui lòng chọn mật khẩu mạnh hơn');
+                    }
+                },
             ],
 
             'phone' => ['string'],
@@ -44,3 +54,4 @@ class RegisterRequest extends FormRequest
         ];
     }
 }
+

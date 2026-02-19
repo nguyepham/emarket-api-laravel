@@ -5,11 +5,15 @@ namespace App\Http\Responses;
 use Illuminate\Contracts\Support\Arrayable;
 use JsonSerializable;
 
-readonly class AuthenticatedResponse implements JsonSerializable, Arrayable
+readonly class AuthenticatedUser implements JsonSerializable, Arrayable
 {
     public function __construct(
         public string $accessToken,
-        public string $refreshToken
+        public string $refreshToken,
+        public string $id,
+        public string $email,
+        public string $firstName,
+        public string $lastName
     ) {}
 
     /**
@@ -21,6 +25,10 @@ readonly class AuthenticatedResponse implements JsonSerializable, Arrayable
         return [
             'accessToken' => $this->accessToken,
             'refreshToken' => $this->refreshToken,
+            'id' => $this->id,
+            'email' => $this->email,
+            'firstName' => $this->firstName,
+            'lastName' => $this->lastName,
         ];
     }
 

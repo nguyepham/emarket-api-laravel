@@ -8,6 +8,6 @@ class BadCredentialException extends Exception
 {
     public function __construct()
     {
-        parent::__construct('Invalid email or password.');
+        parent::__construct('Email hoặc mật khẩu không hợp lệ.');
     }
 }
