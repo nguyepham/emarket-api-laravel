@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // CORS must be handled globally to catch preflight OPTIONS requests
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->append(\App\Http\Middlewares\AddRequestId::class);
+
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 

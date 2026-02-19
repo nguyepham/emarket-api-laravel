@@ -91,11 +91,14 @@ class AuthController
 
     public function logout(RefreshTokenRequest $request)
     {
-        // $userId = auth()->id();
-        // Log::info('Logout initiated', [
-        //     'user_id' => $userId,
-        //     'refresh_token' => $request->validated('refreshToken')
-        // ]);
+        Log::info('Logout request received', [
+            'refresh_token' => $request->validated('refreshToken')
+        ]);
+        $userId = auth()->id();
+        Log::info('Logout initiated', [
+            'user_id' => $userId,
+            'refresh_token' => $request->validated('refreshToken')
+        ]);
 
         // Invalidate the JWT (Access Token) via Blacklist
         auth()->logout();
@@ -104,10 +107,10 @@ class AuthController
         $refreshToken = $request->validated('refreshToken');
         $deleted = RefreshToken::where('token', $refreshToken)->delete();
 
-        // Log::info('Logout completed', [
-        //     'user_id' => $userId,
-        //     'refresh_token_revoked' => $deleted > 0
-        // ]);
+        Log::info('Logout completed', [
+            'user_id' => $userId,
+            'refresh_token_revoked' => $deleted > 0
+        ]);
 
         return response()->noContent();
     }

@@ -10,7 +10,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('/auth')->group(function () {
-        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/login', [AuthController::class, 'login'])->name('login');
         Route::post('/register', [AuthController::class, 'register']);
         Route::post('/refresh', [AuthController::class, 'refresh']);
         Route::post('/password/reset', [AuthController::class, 'resetPassword']);
