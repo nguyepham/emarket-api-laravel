@@ -24,39 +24,39 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
-        $exceptions->render(function (\Illuminate\Validation\ValidationException $e) {
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
             // Use the static factory method created earlier
             // It automatically converts the complex Laravel error bag
             // into the "ErrorResponse" structure.
-            return ErrorResponse::fromValidator($e->validator);
+            return ErrorResponse::fromValidator($e->validator)->toResponse($request);
         });
-        $exceptions->render(function (\App\Exceptions\BadCredentialException $e) {
-            return new ErrorResponse(401, [new ErrorItem(
+        $exceptions->render(function (\App\Exceptions\BadCredentialException $e, $request) {
+            return (new ErrorResponse(401, [new ErrorItem(
                 message: $e->getMessage(),
                 exception: ExceptionName::BadCredential->value)]
-            );
+            ))->toResponse($request);
         });
-        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e) {
-            return new ErrorResponse(401, [new ErrorItem(
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            return (new ErrorResponse(401, [new ErrorItem(
                 message: 'API Token is missing or invalid.',
                 exception: ExceptionName::Unauthenticated->value)]
-            );
+            ))->toResponse($request);
         });
-        $exceptions->render(function (ModelNotFoundException $e) {
-            return new ErrorResponse(404, [new ErrorItem(
+        $exceptions->render(function (ModelNotFoundException $e, $request) {
+            return (new ErrorResponse(404, [new ErrorItem(
                 message: 'Resource does not exist: ' . $e->getModel() . ': ' . $e->getIds()[0],
                 exception: ExceptionName::ModelNotFound->value)]
-            );
+            ))->toResponse($request);
         });
-        $exceptions->render(function (Throwable $e) {
+        $exceptions->render(function (Throwable $e, $request) {
             $message = app()->environment(['local', 'testing']) ? $e->getMessage() : 'Server Error. Please try again later.';
 
-            return new ErrorResponse(500, [new ErrorItem(
+            return (new ErrorResponse(500, [new ErrorItem(
                 message: $message,
                 exception: get_class($e),
                 file: $e->getFile(),
                 line: $e->getLine(),
                 trace: $e->getTrace()
-            )]);
+            )]))->toResponse($request);
         });
     })->create();
